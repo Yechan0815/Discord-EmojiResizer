@@ -11,11 +11,12 @@ client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
   if (!message.guild) return;
   if (!message.guild.emojis.cache) return;
   if (message.author.bot) return;
   const emojis = message.content.match(/<:[A-Za-z0-9_~:]+>/g);
+  var check = message.content;
   const processed = [];
   const result = [];
   if (!emojis) return;
@@ -27,21 +28,25 @@ client.on("messageCreate", (message) => {
     });
   });
   processed.forEach((cemoji) => {
-    if (message.guild.emojis.cache.find((e) => e.name == cemoji.name))
-      result.push(
-        new MessageEmbed()
-          .setAuthor({
-            name: message.author.username,
-            iconURL: message.author.avatarURL(),
-          })
-          .setImage(
-            message.guild.emojis.cache.find((e) => e.name == cemoji.name).url
-          )
-      );
+    if (!message.guild.emojis.cache.find((e) => e.name == cemoji.name)) return;
+    result.push(
+      new MessageEmbed()
+        .setAuthor({
+          name: message.author.username,
+          iconURL: message.author.avatarURL(),
+        })
+        .setImage(
+          message.guild.emojis.cache.find((e) => e.name == cemoji.name).url
+        )
+    );
+    check = check.replace(`<:${cemoji.name}:${cemoji.guild}>`, "");
   });
+  check = check.trim();
   if (result.length == 0) return;
-  message.delete();
-  message.channel.send({ embeds: result });
+  if (message.type === "REPLY")
+    (await message.fetchReference()).reply({ embeds: result });
+  else message.channel.send({ embeds: result });
+  if (check === "") message.delete();
 });
 
 client.login(process.env.BOT_TOKEN);
